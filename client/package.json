@@ -9,7 +9,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "ai-travel-assistant": "file:..",
     "framer-motion": "^11.11.0",
     "lucide-react": "^0.460.0",
     "react": "^18.3.1",

@@ -23,7 +23,8 @@ export default function ChatBot({ tripContext }) {
     setMessages([...history, { role: "bot", text: "" }]);
 
     try {
-      const res = await fetch("/api/chat", {
+      const apiBase = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${apiBase}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: history.slice(1), tripContext }),
