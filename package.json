@@ -3,7 +3,13 @@
   "private": true,
   "scripts": {
     "install:all": "npm install && npm --prefix server install && npm --prefix client install",
-    "dev": "concurrently -n server,client -c yellow,green \"npm --prefix server run dev\" \"npm --prefix client run dev\""
+    "dev": "concurrently -n server,client -c yellow,green \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "test": "k6 run load-tests/load_test.js",
+    "test:load": "k6 run load-tests/load_test.js",
+    "pm2:start": "pm2 start ecosystem.config.cjs",
+    "pm2:stop": "pm2 stop travel-api",
+    "pm2:restart": "pm2 restart travel-api",
+    "pm2:monit": "pm2 monit"
   },
   "devDependencies": {
     "concurrently": "^9.0.0"

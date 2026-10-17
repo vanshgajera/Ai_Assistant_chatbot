@@ -1,8 +1,12 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 import { GoogleGenAI } from "@google/genai";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, ".env") });
 dotenv.config();
 
 const app = express();
@@ -127,12 +131,29 @@ function cacheSet(key, data) {
   planCache.set(key, { t: Date.now(), data });
 }
 
+/* ------------------------------------------------------------------ */
+app.get("/", (_req, res) => res.send("AI Travel API chal raha hai ✈️"));
+
+// Health check endpoint (exempt from rate limit for load testing / monitoring)
+app.get("/api/health", (_req, res) => {
+  res.json({
+    primary: PRIMARY,
+    chain: modelChain(),
+    cooldown: Object.fromEntries(
+      [...cooldown].filter(([, t]) => t > Date.now()).map(([m, t]) => [m, Math.ceil((t - Date.now()) / 1000) + "s"])
+    ),
+    cachedPlans: planCache.size,
+  });
+});
+
 /* ------------------------------------------------------------------ *
  *  Simple rate limit (har IP se 20 request / minute)
+ *  AI endpoints (/api/plan, /api/chat) ke liye
  * ------------------------------------------------------------------ */
 const hits = new Map();
 function rateLimit(max, windowMs) {
   return (req, res, next) => {
+    if (process.env.SKIP_RATE_LIMIT === "true" || req.path === "/health") return next();
     const now = Date.now();
     const arr = (hits.get(req.ip) || []).filter((t) => now - t < windowMs);
     if (arr.length >= max) {
@@ -144,20 +165,6 @@ function rateLimit(max, windowMs) {
   };
 }
 app.use("/api", rateLimit(20, 60 * 1000));
-
-/* ------------------------------------------------------------------ */
-app.get("/", (_req, res) => res.send("AI Travel API chal raha hai ✈️"));
-
-app.get("/api/health", (_req, res) => {
-  res.json({
-    primary: PRIMARY,
-    chain: modelChain(),
-    cooldown: Object.fromEntries(
-      [...cooldown].filter(([, t]) => t > Date.now()).map(([m, t]) => [m, Math.ceil((t - Date.now()) / 1000) + "s"])
-    ),
-    cachedPlans: planCache.size,
-  });
-});
 
 // ---------- Trip planner (structured JSON) ----------
 function parsePlan(response) {
